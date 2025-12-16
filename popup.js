@@ -23,41 +23,62 @@ function createMobileFrame(deviceKey) {
             height: 844,
             borderRadius: "50px",
             frameColor: "#1c1c1e",
-            notchWidth: "40%",
-            notchHeight: "35px",
         },
         samsung: {
             width: 384,
             height: 854,
             borderRadius: "30px",
             frameColor: "#1a1a1a",
-            cameraHoleSize: "12px",
         },
     };
 
     const device = devices[deviceKey];
-
     if (!device) {
-        console.error("Invalid device selected");
-    }
-
-    const existingOverlay = document.getElementById("mobile-view-overlay");
-    if (existingOverlay) {
+        console.error("Invalid device selected:", deviceKey);
         return;
     }
 
+    const existingOverlay = document.getElementById("mobile-view-overlay");
 
-    ///overlay creation 
+    // ================= UPDATE EXISTING =================
+    if (existingOverlay) {
+        const currentDevice = existingOverlay.dataset.device;
+        if (currentDevice === deviceKey) {
+            console.log("Same device selected → no update");
+            return;
+        }
+
+        const frame = document.getElementById("mobile-view-frame");
+        if (!frame) {
+            console.error("Frame not found");
+            return;
+        }
+
+        Object.assign(frame.style, {
+            width: `${device.width}px`,
+            height: `${device.height}px`,
+            border: `14px solid ${device.frameColor}`,
+            borderRadius: device.borderRadius,
+        });
+
+        const iframe = frame.querySelector("iframe");
+        if (iframe) {
+            iframe.src = window.location.href;
+        }
+
+        existingOverlay.dataset.device = deviceKey;
+        console.log("Device updated →", deviceKey);
+        return;
+    }
+
+    // ================= CREATE OVERLAY =================
     const overlay = document.createElement("div");
     overlay.id = "mobile-view-overlay";
-    overlay.setAttribute("data-device", deviceKey);
+    overlay.dataset.device = deviceKey;
 
     Object.assign(overlay.style, {
         position: "fixed",
-        top: "0",
-        left: "0",
-        width: "100vw",
-        height: "100vh",
+        inset: "0",
         backgroundColor: "rgba(0,0,0,0.5)",
         display: "flex",
         justifyContent: "center",
@@ -65,29 +86,44 @@ function createMobileFrame(deviceKey) {
         zIndex: "100000",
     });
 
-    //// Mobile frame Creation
+    // ================= CREATE FRAME =================
     const frame = document.createElement("div");
     frame.id = "mobile-view-frame";
+
     Object.assign(frame.style, {
         width: `${device.width}px`,
         height: `${device.height}px`,
-        border: `${device.frameColor} solid`,
+        border: `14px solid ${device.frameColor}`,
         borderRadius: device.borderRadius,
-        position: "relative",
         background: "#494949",
-        boxShadow: "0 0 20px rgba(0,0,0,0.3)",
-        overflow: "hidden"
-    })
+        position: "relative",
+        overflow: "hidden",
+        boxShadow: "0 0 20px rgba(0,0,0,0.4)",
+    });
 
+    const iFrame = document.createElement("iframe");
+    iFrame.src = window.location.href;
+    Object.assign(iFrame.style, {
+        width: "100%",
+        height: "100%",
+        border: "none",
+        overflow: "hidden",
+        position: "absolute",
+        left: "0"
+    });
+
+
+    frame.appendChild(iFrame);
     overlay.appendChild(frame);
     document.body.appendChild(overlay);
 
-    overlay.addEventListener("click", (e) => {
+    overlay.addEventListener("click", e => {
         if (e.target === overlay) {
             overlay.remove();
         }
     });
 
+    console.log("Overlay created →", deviceKey);
 }
 
 function updateSelectedDevice(selectedButton) {
